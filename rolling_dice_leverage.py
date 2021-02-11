@@ -17,11 +17,11 @@ def invest( prob ):
     return money
 
 def checking():
-    result = [0]*21
+    result = [0]*101
     for i in range( 1000 ):
-        seq = range(21)
+        seq = range(101)
         for prob in seq:
-            result[prob] += invest( prob/20 )/1000
+            result[prob] += invest( prob/100 )/1000
     result = [ int(x) for x in result ]        
     print( result ) 
     
