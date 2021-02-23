@@ -9,3 +9,6 @@ ts = ( ind.to_frame('Original')
        .assign(Seasonality=components.seasonal)
        .assign(Residual=components.resid))
 ts.plot(subplots=True, figsize=(14,8))
+
+df = web.DataReader(name='SP500', data_source='fred', start=2009).squeeze().to_frame('close')
+spx = web.DataReader('SP500', 'fred', 2009, 2020).squeeze().to_frame('close')
