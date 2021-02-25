@@ -20,9 +20,10 @@ data = ticker.history(period='5d',
 ticker.sustainability
 
 #analyst
-ticker.recommendations.info()
-ticker.recommendations.tail(10)
+#ticker.recommendations.info()
+#ticker.recommendations.tail(10)
 
-ticker.options
+#ticker.options
 expiration = ticker.options[0]
 options = ticker.option_chain(expiration)
+options.calls.iloc[0]
