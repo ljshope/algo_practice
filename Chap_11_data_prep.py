@@ -37,5 +37,5 @@ nobs = prices.groupby( level = 'ticker').size()
 to_drop = nobs[ nobs < min_obs ].index
 prices = prices.drop(to_drop, level='ticker')
 
-
+prices.to_hdf('data.h5', 'us/equities/prices')
 
