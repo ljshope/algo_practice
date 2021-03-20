@@ -28,4 +28,14 @@ with pd.HDFStore(path+'/assets.h5') as store:
    #           .join(store['us_equities/stocks'].loc[:,['sector']])
               .dropna())
 
-prices = prices.loc[f'{start}':f'{end}', :]
+query = prices.index.get_level_values(1) >= pd.Timestamp('2008-01-01')
+prices = prices[query]
+
+#len( prices.index.unique('ticker') ) 
+min_obs = 10*252
+nobs = prices.groupby( level = 'ticker').size()
+to_drop = nobs[ nobs < min_obs ].index
+prices = prices.drop(to_drop, level='ticker')
+
+
+
