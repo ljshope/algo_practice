@@ -39,3 +39,50 @@ prices = prices.drop(to_drop, level='ticker')
 
 prices.to_hdf('data.h5', 'us/equities/prices')
 
+prices['dollar_volume'] = prices.loc[:,'close'].mul(prices.loc[:,'volume'], axis = 0)
+prices.dollar_volume /= 1e6
+prices = prices.unstack('ticker')
+data = (pd.concat([prices.dollar_volume.resample('M').mean().stack('ticker').to_frame('dollar_volume'),
+                   prices[last_cols].resample('M').last().stack('ticker')],
+                  axis=1)
+        .swaplevel()
+        .dropna())
+
+outlier_cutoff = 0.01
+lags = [1, 3, 6, 12]
+returns = []
+
+for lag in lags:
+    returns.append(data
+                   .close
+                   .unstack('ticker')
+                   .sort_index()
+                   .pct_change(lag)
+                   .stack('ticker')
+                   .pipe(lambda x: x.clip(lower=x.quantile(outlier_cutoff),
+                                          upper=x.quantile(1-outlier_cutoff)))
+                   .add(1)
+                   .pow(1/lag)
+                   .sub(1)
+                   .to_frame(f'return_{lag}m')
+                   )
+    
+returns = pd.concat(returns, axis=1).swaplevel()
+returns.info(null_counts=True)
+cmap = sns.diverging_palette(10, 220, as_cmap=True)
+sns.clustermap(returns.corr('spearman'), annot=True, center=0, cmap=cmap);
+
+data = data.join( returns ).dropna()
+
+min_obs =111
+nobs = data.groupby(level='ticker').size()
+to_drop = nobs[nobs < min_obs].index
+data = data.drop(to_drop, level='ticker')
+
+data['target'] = data.groupby(level='ticker')[f'return_1m'].shift(-1)
+data = data.dropna()
+
+with pd.HDFStore('data.h5') as store:
+    store.put('us/equities/monthly', data)
+
+
