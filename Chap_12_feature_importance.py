@@ -90,3 +90,23 @@ plt.suptitle('Normalized Importance (Top 20 Features)', fontsize=14)
 plt.tight_layout()
 plt.subplots_adjust(top=.9)
 #plt.savefig('figures/lgb_fi', dpi=300)
+
+
+
+X = data[features].sample(n=1000)
+
+# load JS visualization code to notebook
+shap.initjs()
+
+# explain the model's predictions using SHAP values
+explainer = shap.TreeExplainer(lgb_model)
+shap_values = explainer.shap_values(X=X)
+
+shap.summary_plot(shap_values, X, show=False)
+plt.tight_layout()
+#plt.savefig('figures/shap_dots', dpi=300)
+
+shap.summary_plot(shap_values, X, plot_type="bar",show=False)
+plt.tight_layout()
+#plt.savefig('figures/shap_bar', dpi=300)
+
