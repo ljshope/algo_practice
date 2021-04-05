@@ -18,9 +18,11 @@ from matplotlib.ticker import FuncFormatter
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 
+idx = pd.IndexSlice
+
 wholedata = pd.read_hdf('data.h5', 'model_data').sort_index()
 data = wholedata.loc[idx[:, '2012':'2017.6'], :]
-test_set = wholedata.loc[idx[:, '2017.7':'2018'], :]
+test_set = wholedata.loc[idx[:, '2017.8':'2017.12.15'], :]
 
 best_params = dict( train_length = 1134,
                test_length = 63, 
@@ -31,10 +33,10 @@ best_params = dict( train_length = 1134,
                boost_rounds = 400 )
 
 dates = sorted( data.index.get_level_values('date').unique() )
-train_dates = dates[ -int( best_params.train_length):]
-data = data.loc[idx[:,train_datres],:]
+train_dates = dates[ -int( best_params['train_length']):]
+data = data.loc[idx[:,train_dates],:]
 labels = sorted( data.filter(like='_fwd').columns )
-features = data.columns.difference(labeles).tolist()
+features = data.columns.difference(labels).tolist()
 lookahead = 1
 label = f'r{lookahead:02}_fwd'
 
@@ -47,23 +49,26 @@ lgb_train = lgb.Dataset(data=data[features],
 
 params = dict(boosting='gbdt', objective='regression', verbose=-1)
 train_params = ['learning_rate', 'num_leaves', 'feature_fraction', 'min_data_in_leaf']
-params.update(best_params.loc[train_params].to_dict())
+for val in train_params:
+    params[val] = best_params[val] 
+    
 for p in ['min_data_in_leaf', 'num_leaves']:
     params[p] = int(params[p])
 
 lgb_model = lgb.train(params=params,
                   train_set=lgb_train,
-                  num_boost_round=int(best_params.boost_rounds))
+                  num_boost_round=int(best_params['boost_rounds']))
 
 num_iterations = list(range(100, 401, 100))
-X_test = test_set.loc[:, model.feature_name()]
+test_set = test_set.dropna()
+X_test = test_set.loc[:, lgb_model.feature_name()]
 y_test = test_set.loc[:, label]
-y_pred = {str(n): model.predict(X_test, num_iteration=n) for n in num_iterations}
+y_pred = {str(n): lgb_model.predict(X_test, num_iteration=n) for n in num_iterations}
         
 a = np.array( y_test )
 b = np.array( y_pred["400"] )
-r.append( np.corrcoef(a,b)[0,1] )
-  
+r =  np.corrcoef(a,b)[0,1]
+
 def get_feature_importance(model, importance_type='split'):
     fi = pd.Series(model.feature_importance(importance_type=importance_type), 
                    index=model.feature_name())
@@ -84,4 +89,4 @@ feature_importance = (get_feature_importance(lgb_model).to_frame('Split').
 plt.suptitle('Normalized Importance (Top 20 Features)', fontsize=14)
 plt.tight_layout()
 plt.subplots_adjust(top=.9)
-plt.savefig('figures/lgb_fi', dpi=300)
+#plt.savefig('figures/lgb_fi', dpi=300)
