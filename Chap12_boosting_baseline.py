@@ -42,15 +42,15 @@ base_params = dict(boosting='gbdt',
                    verbose=-1)
 
 # constraints on structure (depth) of each tree
-max_depths = [7]#[2, 3, 5, 7]
+max_depths = [6]#[2, 3, 5, 7]
 num_leaves_opts = [2 ** i for i in max_depths]
 min_data_in_leaf_opts = [5]#[250, 500, 1000]
 
 # weight of each new tree in the ensemble
-learning_rate_ops = [.1 ]#, .1, .3]
+learning_rate_ops = [.01 ]#, .1, .3]
 
 # random feature selection
-feature_fraction_opts = [ .6]
+feature_fraction_opts = [ .95]
 
 param_names = ['learning_rate', 'num_leaves',
                'feature_fraction', 'min_data_in_leaf']
@@ -71,7 +71,7 @@ for feature in categoricals:
 
 features = AAPL.columns.difference(labels).tolist()
 
-num_iterations = [10, 25, 50, 75] + list(range(100, 1001, 100))
+num_iterations = [10, 25, 50, 75] + list(range(100, 501, 100))
 num_boost_round = num_iterations[-1]
 
 train_lengths = [int(4.5 * 252) ]
@@ -109,7 +109,7 @@ for lookahead, train_length, test_length in test_params:
     y_pred = {str(n): model.predict(X_test, num_iteration=n) for n in num_iterations}
         
     a = np.array( y_test )
-    b = np.array( y_pred["1000"] )
+    b = np.array( y_pred["500"] )
     r.append( np.corrcoef(a,b)[0,1] )
     
 #    cv_preds.append(y_test.to_frame('y_test').assign(**y_pred).assign( i = 0 ))
